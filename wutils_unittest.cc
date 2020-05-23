@@ -6,13 +6,13 @@
 
 namespace {
 
-TEST(CxxTest, 0String) {
-  auto tmp = "0x" + nswutils::hex((const unsigned char *)"hello", 6);
+TEST(CxxTest, 0_String) {
+  auto tmp = "0x" + wutils::hex((const unsigned char *)"hello", 6);
   ASSERT_EQ(tmp, "0x68656c6c6f00");
   asm("nop");
 }
 
-TEST(CTest, 0String) {
+TEST(CTest, 0_String) {
   // 0x68656c6c6f00 NUL
   // 12345678901234 5
   char buf12[12];

@@ -1,10 +1,11 @@
-//===-- wutils.cc - wataash's single file library  --------------*- C++ -*-===//
+//===-- wutils.cc - wataash's single-file utility library -------*- C++ -*-===//
 //
-// License: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 ///
 /// \file
+/// wataash's single-file utility library.
 /// Coding style follows "LLVM Coding Standards"
 /// https://llvm.org/docs/CodingStandards.html
 ///
@@ -12,10 +13,42 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef WUTILS_CC
-#define WUTILS_CC
+#ifndef WUTILS_CC_DECLS
+#define WUTILS_CC_DECLS
 
+// include <sys/cdefs.h> <sys/param.h> <sys/types.h> first for BSD
+// compatibilities. Many manual pages suggest doing so.
+//
+// http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=HEAD&content-type=text/x-cvsweb-markup
+// > #include <sys/cdefs.h>
+// > ...
+// > #include <sys/param.h>		/* <sys/param.h> first, */
+// > #include <sys/types.h>		/*   <sys/types.h> next, */
+//
+// https://man.openbsd.org/style
+// > you'll need <sys/types.h> OR <sys/param.h>
+//
+// https://www.freebsd.org/cgi/man.cgi?query=style&sektion=9
+// > If <sys/cdefs.h> is needed ... include it first.
+// > If either <sys/types.h> or <sys/param.h> is needed, include it before other
+// > include files.
+//
+// http://man7.org/linux/man-pages/man2/socket.2.html
+// > inclusion of <sys/types.h> ... some historical (BSD) implementations
+// > required this header file, and portable applications are probably wise to
+// > include it.
+//
+// https://man.openbsd.org/imsg_init.3
+// > #include <sys/types.h>
+//
+// So including these is historically well tested. Not doing so would cause
+// // hard-to-debug problems, such like
+// https://github.com/vincentbernat/lldpd/issues/264
+// , which turned fork() into vfork() on NetBSD! And which could be avoided by
+// including these headers first.
 #include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/types.h>
 
 //===----------------------------------------------------------------------===//
 // decl: C++
@@ -26,19 +59,21 @@
 #include <cstddef>
 #include <string>
 
-namespace nswutils {
+namespace wutils {
 
-// C++: 0 string
+// Sort lexicographically.
+
+// C++: 0_primary_string
 
 std::string hex(const unsigned char *data, size_t len);
 
 // C++: misc
 
-// C++: z draft
+// C++: z_draft
 
-} // namespace nswutils
+} // namespace wutils
 
-#endif //__cplusplus
+#endif // __cplusplus
 
 //===----------------------------------------------------------------------===//
 // decl: C
@@ -46,17 +81,12 @@ std::string hex(const unsigned char *data, size_t len);
 
 __BEGIN_DECLS
 
-// BSD compat
-// http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=HEAD&content-type=text/x-cvsweb-markup
-#include <sys/param.h>
-#include <sys/types.h>
-
 #include <stdarg.h>
 #include <stdbool.h>
 
 void w_sandbox(void);
 
-// C: 0 string
+// C: 0_primary_string
 
 int w_hex(const unsigned char *bytes, size_t len_bytes, char *buf,
           size_t len_buf, bool x);
@@ -103,21 +133,23 @@ void w_stop(void);
 void w_systemf(const char *format, ...)
     __attribute__((__format__(printf, 1, 2))); // should be restrict?
 
-// C: z draft
+// C: z_draft
 
 unsigned long w_hash(const char *str);
 
 __END_DECLS
 
-#endif // WUTILS_CC
+#endif // WUTILS_CC_DECLS
 
 //===----------------------------------------------------------------------===//
 // impl: include
 //===----------------------------------------------------------------------===//
 
-// string comparison is so hard... https://stackoverflow.com/q/2335888/4085441
-// // __BASE_FILE__ for clang; TODO: gcc
-// #if __BASE_FILE__ == ../libwutils/wutils.cc.compile.cc
+// TODO: Compile below only when wutils.cc is DIRECTLY compiled, not when
+//   included by other files. but
+//   #if __BASE_FILE__ == ../libwutils/wutils.cc.compile.cc
+//   is so difficult... https://stackoverflow.com/q/2335888/4085441
+//   (N.B. __BASE_FILE__ is gcc extension)
 
 #if defined(WUTILS_IMPL_IF_CXX) && defined(__cplusplus)
 #pragma message "defining WUTILS_IMPL..."
@@ -147,9 +179,9 @@ __END_DECLS
 // impl: C++
 //===----------------------------------------------------------------------===//
 
-namespace nswutils {
+namespace wutils {
 
-// C++: 0 string
+// C++: 0_primary_string
 
 // https://stackoverflow.com/a/14051107/4085441
 std::string hex(const unsigned char *data, size_t len) {
@@ -182,9 +214,9 @@ private:
 
 void CWUtils::_lsof() { std::system("true"); }
 
-} // namespace nswutils
+} // namespace wutils
 
-// C++: z draft
+// C++: z_draft
 
 //===----------------------------------------------------------------------===//
 // impl: C
@@ -194,8 +226,8 @@ __BEGIN_DECLS
 namespace {
 
 void w_sandbox() {
-  auto cp = new nswutils::CWUtils(); // size: 8
-  auto c = nswutils::CWUtils(9);     // size: 4
+  auto cp = new wutils::CWUtils(); // size: 8
+  auto c = wutils::CWUtils(9);     // size: 4
 
   (void)cp->iii;
   (void)c.iii;
@@ -206,7 +238,7 @@ void w_sandbox() {
   cp = nullptr;
 }
 
-// C: 0 string
+// C: 0_primary_string
 
 // XXX: __restrict__: g++ extension
 // "static" is meaningless, just for annotation
@@ -222,7 +254,7 @@ static size_t w_strlcpy(char *__restrict__ dst, const char *__restrict__ src,
 
 int w_hex(const unsigned char *bytes, size_t len_bytes, char *buf,
           size_t len_buf, bool x) {
-  auto h = nswutils::hex(bytes, len_bytes);
+  auto h = wutils::hex(bytes, len_bytes);
   if (x) {
     h = "0x" + h;
   }
@@ -382,7 +414,7 @@ void w_systemf(const char *format, ...) {
   std::fprintf(stderr, "\x1b[0m");
 }
 
-// C: z draft
+// C: z_draft
 
 // https://stackoverflow.com/a/7666577/4085441
 unsigned long w_hash(const char *str) {
